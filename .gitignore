@@ -1,0 +1,26 @@
+# Xcode
+.DS_Store
+xcuserdata/
+.xcuserdata/
+DerivedData/
+build/
+.build/
+*.xcarchive
+*.ipa
+*.xcconfig
+
+# Swift Package Manager
+.swiftpm/
+.package.resolved
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# IDE
+.vscode/
+*.swiftpm
+
+# OS
+.DS_Store
+Thumbs.db
