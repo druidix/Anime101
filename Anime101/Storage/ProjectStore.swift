@@ -1,8 +1,9 @@
 import Foundation
 import PencilKit
 import UIKit
+import SwiftUI
 
-class ProjectStore {
+class ProjectStore: ObservableObject {
     private let fileManager = FileManager.default
 
     // MARK: - Public Methods

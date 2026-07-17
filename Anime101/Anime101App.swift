@@ -2,9 +2,12 @@ import SwiftUI
 
 @main
 struct Anime101App: App {
+    @StateObject private var projectStore = ProjectStore()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainMenuView()
+                .environmentObject(projectStore)
         }
     }
 }

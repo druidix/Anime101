@@ -1,6 +1,6 @@
 import Foundation
 
-struct Project: Codable {
+struct Project: Codable, Identifiable, Hashable {
     let id: UUID
     var name: String
     let createdAt: Date
