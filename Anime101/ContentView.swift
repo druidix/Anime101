@@ -68,10 +68,9 @@ struct MainMenuView: View {
                         .cornerRadius(8)
                     }
 
-                    NavigationLink(isActive: $isCreatingNewProject) {
-                        NewProjectView()
-                            .environmentObject(projectStore)
-                    } label: {
+                    Button(action: {
+                        isCreatingNewProject = true
+                    }) {
                         HStack {
                             Image(systemName: "plus.circle.fill")
                             Text("Create New Project")
@@ -82,6 +81,10 @@ struct MainMenuView: View {
                         .foregroundStyle(.white)
                         .background(.green)
                         .cornerRadius(8)
+                    }
+                    .navigationDestination(isPresented: $isCreatingNewProject) {
+                        NewProjectView()
+                            .environmentObject(projectStore)
                     }
                 }
                 .padding(24)
@@ -230,16 +233,19 @@ struct ProjectListView: View {
         .navigationTitle("Projects")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(isActive: $isCreatingNewProject) {
-                    NewProjectView()
-                        .environmentObject(projectStore)
-                } label: {
+                Button(action: {
+                    isCreatingNewProject = true
+                }) {
                     HStack {
                         Image(systemName: "plus")
                         Text("New")
                     }
                 }
             }
+        }
+        .navigationDestination(isPresented: $isCreatingNewProject) {
+            NewProjectView()
+                .environmentObject(projectStore)
         }
         .navigationDestination(item: $newProject) { project in
             CanvasStubView(project: project)
