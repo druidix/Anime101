@@ -1,4 +1,6 @@
 import SwiftUI
+import PencilKit
+import UIKit
 
 @MainActor
 class ProjectListViewModel: ObservableObject {
@@ -103,7 +105,8 @@ struct NewProjectView: View {
 
     var body: some View {
         if let createdProject = createdProject {
-            CanvasStubView(project: createdProject)
+            CanvasView(project: createdProject)
+                .environmentObject(projectStore)
         } else {
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 16) {
@@ -144,22 +147,13 @@ struct NewProjectView: View {
                         .cornerRadius(8)
                 }
 
-                VStack(spacing: 16) {
-                    Image(systemName: "paintbrush.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.blue)
-                    Text("Canvas - Coming Soon")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                    Text("PencilKit drawing integration will be implemented here")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(maxHeight: .infinity)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
+                CanvasView(project: Project(
+                    id: UUID(),
+                    name: projectName,
+                    createdAt: Date(),
+                    modifiedAt: Date()
+                ))
+                .environmentObject(projectStore)
 
                 Spacer()
             }
@@ -205,7 +199,7 @@ struct ProjectListView: View {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(projects, id: \.id) { project in
-                            NavigationLink(destination: CanvasStubView(project: project)) {
+                            NavigationLink(destination: CanvasView(project: project).environmentObject(projectStore)) {
                                 ProjectCell(project: project)
                                     .contextMenu {
                                         Button(role: .destructive) {
@@ -248,7 +242,8 @@ struct ProjectListView: View {
                 .environmentObject(projectStore)
         }
         .navigationDestination(item: $newProject) { project in
-            CanvasStubView(project: project)
+            CanvasView(project: project)
+                .environmentObject(projectStore)
         }
         .onAppear {
             DispatchQueue.main.async {
@@ -303,80 +298,164 @@ struct ProjectCell: View {
     }
 }
 
-struct CanvasStubView: View {
+struct CanvasView: View {
     let project: Project
+    @EnvironmentObject var projectStore: ProjectStore
+    @State private var drawing: PKDrawing = PKDrawing()
+    @State private var isDirty = false
+    @State private var isSaving = false
 
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
-        VStack(spacing: 24) {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Project Name")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(project.name)
-                        .font(.title2)
-                        .fontWeight(.semibold)
+        ZStack {
+            VStack(spacing: 0) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(project.name)
+                            .font(.headline)
+                        Text("Modified: \(project.modifiedAt.formatted(date: .abbreviated, time: .shortened))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    HStack(spacing: 12) {
+                        if isDirty {
+                            Text("Unsaved")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+
+                        Button(action: saveDrawing) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text("Save")
+                            }
+                            .font(.caption)
+                        }
+                        .disabled(!isDirty || isSaving)
+                    }
                 }
+                .padding()
+                .background(Color(.systemBackground))
+                .border(Color(.systemGray4), width: 1)
 
-                Divider()
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Project ID")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(project.id.uuidString)
-                        .font(.caption)
-                        .monospaced()
-                        .foregroundStyle(.secondary)
-                }
-
-                Divider()
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Created")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(project.createdAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Last Modified")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(project.modifiedAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                PKCanvasViewRepresentable(drawing: $drawing, isDirty: $isDirty)
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(8)
 
-            VStack(spacing: 16) {
-                Image(systemName: "paintbrush.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.blue)
-                Text("Canvas - Coming Soon")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                Text("PencilKit drawing integration will be implemented here")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+            if isSaving {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.opacity(0.3))
             }
-            .frame(maxWidth: .infinity)
-            .frame(maxHeight: .infinity)
-            .background(Color(.systemGray6))
-            .cornerRadius(8)
-
-            Spacer()
         }
-        .padding()
-        .navigationTitle(project.name)
+        .navigationBarBackButtonHidden(false)
+        .onAppear {
+            loadDrawing()
+        }
+        .onDisappear {
+            if isDirty {
+                saveDrawing()
+            }
+        }
+    }
+
+    private func loadDrawing() {
+        if let (_, loadedDrawing) = projectStore.loadProject(id: project.id) {
+            drawing = loadedDrawing
+        }
+    }
+
+    private func saveDrawing() {
+        isSaving = true
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            let thumbnail = drawing.createThumbnail()
+            let success = projectStore.save(project: project, drawing: drawing, thumbnail: thumbnail)
+
+            DispatchQueue.main.async {
+                isSaving = false
+                if success {
+                    isDirty = false
+                }
+            }
+        }
+    }
+}
+
+struct PKCanvasViewRepresentable: UIViewRepresentable {
+    @Binding var drawing: PKDrawing
+    @Binding var isDirty: Bool
+
+    func makeUIView(context: Context) -> PKCanvasView {
+        let canvas = PKCanvasView()
+        canvas.drawing = drawing
+        canvas.delegate = context.coordinator
+        canvas.isOpaque = false
+        canvas.backgroundColor = .systemBackground
+        return canvas
+    }
+
+    func updateUIView(_ uiView: PKCanvasView, context: Context) {
+        if uiView.drawing != drawing {
+            uiView.drawing = drawing
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(drawing: $drawing, isDirty: $isDirty)
+    }
+
+    class Coordinator: NSObject, PKCanvasViewDelegate {
+        @Binding var drawing: PKDrawing
+        @Binding var isDirty: Bool
+
+        init(drawing: Binding<PKDrawing>, isDirty: Binding<Bool>) {
+            self._drawing = drawing
+            self._isDirty = isDirty
+        }
+
+        func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+            drawing = canvasView.drawing
+            isDirty = true
+        }
+    }
+}
+
+extension PKDrawing {
+    func createThumbnail(size: CGSize = CGSize(width: 100, height: 100)) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            UIColor.systemBackground.setFill()
+            UIRectFill(CGRect(origin: .zero, size: size))
+
+            guard !self.bounds.isEmpty else {
+                return
+            }
+
+            let drawingBounds = self.bounds
+            let aspectRatio = drawingBounds.width / drawingBounds.height
+            let containerAspectRatio = size.width / size.height
+
+            var targetRect = CGRect(origin: .zero, size: size)
+            if aspectRatio > containerAspectRatio {
+                let height = size.width / aspectRatio
+                targetRect.origin.y = (size.height - height) / 2
+                targetRect.size.height = height
+            } else {
+                let width = size.height * aspectRatio
+                targetRect.origin.x = (size.width - width) / 2
+                targetRect.size.width = width
+            }
+
+            let scale = targetRect.width / drawingBounds.width
+            let scaledImage = self.image(from: drawingBounds, scale: scale)
+            scaledImage.draw(in: targetRect)
+        }
     }
 }
 
