@@ -343,6 +343,7 @@ struct CanvasView: View {
                 .border(Color(.systemGray4), width: 1)
 
                 PKCanvasViewRepresentable(drawing: $drawing, isDirty: $isDirty)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             if isSaving {
