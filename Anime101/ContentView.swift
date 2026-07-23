@@ -298,6 +298,32 @@ struct ProjectCell: View {
     }
 }
 
+struct InteractivePopGestureDisabler: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        DisablingViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+
+    private class DisablingViewController: UIViewController {
+        override func viewDidLoad() {
+            super.viewDidLoad()
+            view.isUserInteractionEnabled = false
+            view.backgroundColor = .clear
+        }
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+        }
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        }
+    }
+}
+
 struct CanvasView: View {
     let project: Project
     @EnvironmentObject var projectStore: ProjectStore
@@ -352,16 +378,7 @@ struct CanvasView: View {
                     .background(Color.black.opacity(0.3))
             }
         }
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: { dismiss() }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                }
-            }
-        }
+        .background(InteractivePopGestureDisabler())
         .onAppear {
             loadDrawing()
         }
@@ -406,6 +423,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
         canvas.isOpaque = false
         canvas.backgroundColor = .systemBackground
         canvas.isUserInteractionEnabled = true
+        canvas.drawingPolicy = .anyInput
         canvas.tool = PKInkingTool(.pen)
         return canvas
     }
