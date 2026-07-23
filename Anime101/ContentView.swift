@@ -352,7 +352,16 @@ struct CanvasView: View {
                     .background(Color.black.opacity(0.3))
             }
         }
-        .navigationBarBackButtonHidden(false)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: { dismiss() }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                }
+            }
+        }
         .onAppear {
             loadDrawing()
         }
@@ -396,6 +405,8 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
         canvas.delegate = context.coordinator
         canvas.isOpaque = false
         canvas.backgroundColor = .systemBackground
+        canvas.isUserInteractionEnabled = true
+        canvas.tool = PKInkingTool(.pen)
         return canvas
     }
 
