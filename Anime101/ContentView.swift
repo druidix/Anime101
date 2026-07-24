@@ -2,6 +2,38 @@ import SwiftUI
 import PencilKit
 import UIKit
 
+public enum DrawingTool: CaseIterable {
+    case pencil
+    case eraser
+
+    public var label: String {
+        switch self {
+        case .pencil:
+            return "Pencil"
+        case .eraser:
+            return "Eraser"
+        }
+    }
+
+    public var systemImage: String {
+        switch self {
+        case .pencil:
+            return "pencil"
+        case .eraser:
+            return "eraser"
+        }
+    }
+
+    public var pkTool: PKTool {
+        switch self {
+        case .pencil:
+            return PKInkingTool(.pen)
+        case .eraser:
+            return PKEraserTool(.bitmap)
+        }
+    }
+}
+
 @MainActor
 class ProjectListViewModel: ObservableObject {
     @Published var projects: [Project] = []
@@ -330,6 +362,7 @@ struct CanvasView: View {
     @State private var drawing: PKDrawing = PKDrawing()
     @State private var isDirty = false
     @State private var isSaving = false
+    @State private var currentTool: DrawingTool = .pencil
 
     @Environment(\.dismiss) var dismiss
 
@@ -368,8 +401,20 @@ struct CanvasView: View {
                 .background(Color(.systemBackground))
                 .border(Color(.systemGray4), width: 1)
 
-                PKCanvasViewRepresentable(drawing: $drawing, isDirty: $isDirty)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 0) {
+                    Picker("Tool", selection: $currentTool) {
+                        ForEach(DrawingTool.allCases, id: \.self) { tool in
+                            Label(tool.label, systemImage: tool.systemImage)
+                                .tag(tool)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding()
+                    .background(Color(.systemGray6))
+
+                    PKCanvasViewRepresentable(drawing: $drawing, isDirty: $isDirty, currentTool: $currentTool)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
 
             if isSaving {
@@ -415,6 +460,7 @@ struct CanvasView: View {
 struct PKCanvasViewRepresentable: UIViewRepresentable {
     @Binding var drawing: PKDrawing
     @Binding var isDirty: Bool
+    @Binding var currentTool: DrawingTool
 
     func makeUIView(context: Context) -> PKCanvasView {
         let canvas = PKCanvasView()
@@ -424,7 +470,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
         canvas.backgroundColor = .systemBackground
         canvas.isUserInteractionEnabled = true
         canvas.drawingPolicy = .anyInput
-        canvas.tool = PKInkingTool(.pen)
+        canvas.tool = currentTool.pkTool
         return canvas
     }
 
@@ -432,6 +478,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
         if uiView.drawing != drawing {
             uiView.drawing = drawing
         }
+        uiView.tool = currentTool.pkTool
     }
 
     func makeCoordinator() -> Coordinator {
