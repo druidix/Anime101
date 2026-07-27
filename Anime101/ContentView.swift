@@ -2,8 +2,8 @@ import SwiftUI
 import PencilKit
 import UIKit
 
-class CanvasViewHolder: NSObject, ObservableObject {
-    @Published var canvasView: PKCanvasView?
+class CanvasViewHolder: NSObject {
+    var canvasView: PKCanvasView?
 
     var canUndo: Bool {
         canvasView?.undoManager?.canUndo ?? false
@@ -354,7 +354,7 @@ struct CanvasView: View {
     @State private var currentTool: DrawingTool = .pencil
     @State private var canUndo = false
     @State private var canRedo = false
-    @StateObject private var canvasViewHolder = CanvasViewHolder()
+    @State private var canvasViewHolder = CanvasViewHolder()
 
     @Environment(\.dismiss) var dismiss
 
@@ -494,6 +494,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> PKCanvasView {
         let canvas = PKCanvasView()
         canvas.drawing = drawing
+        context.coordinator.canvasView = canvas
         canvas.delegate = context.coordinator
         canvas.isOpaque = false
         canvas.backgroundColor = .systemBackground
@@ -503,11 +504,6 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
 
         canvas.undoManager?.levelsOfUndo = 50
         canvasViewHolder.canvasView = canvas
-
-        DispatchQueue.main.async {
-            canUndo = canvas.undoManager?.canUndo ?? false
-            canRedo = canvas.undoManager?.canRedo ?? false
-        }
 
         return canvas
     }
@@ -520,7 +516,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(drawing: $drawing, isDirty: $isDirty, canUndo: $canUndo, canRedo: $canRedo)
+        Coordinator(drawing: $drawing, isDirty: $isDirty, canUndo: $canUndo, canRedo: $canRedo, canvasView: nil)
     }
 
     class Coordinator: NSObject, PKCanvasViewDelegate {
@@ -528,19 +524,23 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
         @Binding var isDirty: Bool
         @Binding var canUndo: Bool
         @Binding var canRedo: Bool
+        weak var canvasView: PKCanvasView?
 
-        init(drawing: Binding<PKDrawing>, isDirty: Binding<Bool>, canUndo: Binding<Bool>, canRedo: Binding<Bool>) {
+        init(drawing: Binding<PKDrawing>, isDirty: Binding<Bool>, canUndo: Binding<Bool>, canRedo: Binding<Bool>, canvasView: PKCanvasView?) {
             self._drawing = drawing
             self._isDirty = isDirty
             self._canUndo = canUndo
             self._canRedo = canRedo
+            self.canvasView = canvasView
         }
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
             drawing = canvasView.drawing
             isDirty = true
-            canUndo = canvasView.undoManager?.canUndo ?? false
-            canRedo = canvasView.undoManager?.canRedo ?? false
+            DispatchQueue.main.async {
+                self.canUndo = canvasView.undoManager?.canUndo ?? false
+                self.canRedo = canvasView.undoManager?.canRedo ?? false
+            }
         }
     }
 }
