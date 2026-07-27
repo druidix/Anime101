@@ -2,8 +2,24 @@ import SwiftUI
 import PencilKit
 import UIKit
 
-class UndoManagerHolder {
-    var undoManager: UndoManager?
+class CanvasViewHolder: NSObject {
+    var canvasView: PKCanvasView?
+
+    var canUndo: Bool {
+        canvasView?.undoManager?.canUndo ?? false
+    }
+
+    var canRedo: Bool {
+        canvasView?.undoManager?.canRedo ?? false
+    }
+
+    func undo() {
+        canvasView?.undoManager?.undo()
+    }
+
+    func redo() {
+        canvasView?.undoManager?.redo()
+    }
 }
 
 public enum DrawingTool: CaseIterable {
@@ -369,7 +385,7 @@ struct CanvasView: View {
     @State private var currentTool: DrawingTool = .pencil
     @State private var canUndo = false
     @State private var canRedo = false
-    @State private var undoManagerHolder = UndoManagerHolder()
+    @State private var canvasViewHolder = CanvasViewHolder()
 
     @Environment(\.dismiss) var dismiss
 
@@ -437,7 +453,7 @@ struct CanvasView: View {
                         currentTool: $currentTool,
                         canUndo: $canUndo,
                         canRedo: $canRedo,
-                        undoManagerHolder: undoManagerHolder
+                        canvasViewHolder: canvasViewHolder
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -483,18 +499,18 @@ struct CanvasView: View {
     }
 
     private func undo() {
-        undoManagerHolder.undoManager?.undo()
+        canvasViewHolder.undo()
         updateUndoRedoState()
     }
 
     private func redo() {
-        undoManagerHolder.undoManager?.redo()
+        canvasViewHolder.redo()
         updateUndoRedoState()
     }
 
     private func updateUndoRedoState() {
-        canUndo = undoManagerHolder.undoManager?.canUndo ?? false
-        canRedo = undoManagerHolder.undoManager?.canRedo ?? false
+        canUndo = canvasViewHolder.canUndo
+        canRedo = canvasViewHolder.canRedo
     }
 }
 
@@ -504,7 +520,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
     @Binding var currentTool: DrawingTool
     @Binding var canUndo: Bool
     @Binding var canRedo: Bool
-    let undoManagerHolder: UndoManagerHolder
+    let canvasViewHolder: CanvasViewHolder
 
     func makeUIView(context: Context) -> PKCanvasView {
         let canvas = PKCanvasView()
@@ -517,7 +533,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
         canvas.tool = currentTool.pkTool
 
         canvas.undoManager?.levelsOfUndo = 50
-        undoManagerHolder.undoManager = canvas.undoManager
+        canvasViewHolder.canvasView = canvas
 
         DispatchQueue.main.async {
             canUndo = canvas.undoManager?.canUndo ?? false
