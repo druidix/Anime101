@@ -2,8 +2,8 @@ import SwiftUI
 import PencilKit
 import UIKit
 
-class CanvasViewHolder: NSObject {
-    var canvasView: PKCanvasView?
+class CanvasViewHolder: NSObject, ObservableObject {
+    @Published var canvasView: PKCanvasView?
 
     var canUndo: Bool {
         canvasView?.undoManager?.canUndo ?? false
@@ -51,37 +51,6 @@ public enum DrawingTool: CaseIterable {
         case .eraser:
             return PKEraserTool(.bitmap)
         }
-    }
-}
-
-@MainActor
-class ProjectListViewModel: ObservableObject {
-    @Published var projects: [Project] = []
-
-    var projectStore: ProjectStore
-
-    init(projectStore: ProjectStore) {
-        self.projectStore = projectStore
-    }
-
-    func loadProjects() {
-        projects = projectStore.listProjects()
-    }
-
-    func createProject(name: String) -> Project {
-        let project = projectStore.createProject(name: name)
-        loadProjects()
-        return project
-    }
-
-    func deleteProject(id: UUID) {
-        _ = projectStore.delete(projectId: id)
-        loadProjects()
-    }
-
-    func renameProject(id: UUID, newName: String) {
-        _ = projectStore.rename(projectId: id, newName: newName)
-        loadProjects()
     }
 }
 
@@ -385,7 +354,7 @@ struct CanvasView: View {
     @State private var currentTool: DrawingTool = .pencil
     @State private var canUndo = false
     @State private var canRedo = false
-    @State private var canvasViewHolder = CanvasViewHolder()
+    @StateObject private var canvasViewHolder = CanvasViewHolder()
 
     @Environment(\.dismiss) var dismiss
 
