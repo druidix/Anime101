@@ -2,7 +2,7 @@ import SwiftUI
 import PencilKit
 import UIKit
 
-class CanvasViewHolder: NSObject {
+final class CanvasViewHolder: NSObject {
     var canvasView: PKCanvasView?
 
     var canUndo: Bool {
@@ -22,11 +22,11 @@ class CanvasViewHolder: NSObject {
     }
 }
 
-public enum DrawingTool: CaseIterable {
+enum DrawingTool: CaseIterable {
     case pencil
     case eraser
 
-    public var label: String {
+    var label: String {
         switch self {
         case .pencil:
             return "Pencil"
@@ -35,7 +35,7 @@ public enum DrawingTool: CaseIterable {
         }
     }
 
-    public var systemImage: String {
+    var systemImage: String {
         switch self {
         case .pencil:
             return "pencil"
@@ -44,7 +44,7 @@ public enum DrawingTool: CaseIterable {
         }
     }
 
-    public var pkTool: PKTool {
+    var pkTool: PKTool {
         switch self {
         case .pencil:
             return PKInkingTool(.pen)
@@ -168,14 +168,6 @@ struct NewProjectView: View {
                         .cornerRadius(8)
                 }
 
-                CanvasView(project: Project(
-                    id: UUID(),
-                    name: projectName,
-                    createdAt: Date(),
-                    modifiedAt: Date()
-                ))
-                .environmentObject(projectStore)
-
                 Spacer()
             }
             .padding()
@@ -187,13 +179,11 @@ struct NewProjectView: View {
 struct ProjectListView: View {
     @EnvironmentObject var projectStore: ProjectStore
     @State private var projects: [Project] = []
-    @State private var isLoading = true
 
     @State private var showRenameAlert = false
     @State private var showDeleteAlert = false
     @State private var selectedProjectId: UUID?
     @State private var renameText = ""
-    @State private var newProject: Project?
     @State private var isCreatingNewProject = false
 
     @Environment(\.dismiss) var dismiss
@@ -262,15 +252,8 @@ struct ProjectListView: View {
             NewProjectView()
                 .environmentObject(projectStore)
         }
-        .navigationDestination(item: $newProject) { project in
-            CanvasView(project: project)
-                .environmentObject(projectStore)
-        }
         .onAppear {
-            DispatchQueue.main.async {
-                projects = projectStore.listProjects()
-                isLoading = false
-            }
+            projects = projectStore.listProjects()
         }
         .alert("Rename Project", isPresented: $showRenameAlert, presenting: selectedProjectId) { projectId in
             TextField("Project Name", text: $renameText)
@@ -326,7 +309,7 @@ struct InteractivePopGestureDisabler: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 
-    private class DisablingViewController: UIViewController {
+    private final class DisablingViewController: UIViewController {
         override func viewDidLoad() {
             super.viewDidLoad()
             view.isUserInteractionEnabled = false
@@ -454,9 +437,11 @@ struct CanvasView: View {
     private func saveDrawing() {
         isSaving = true
 
+        let drawingSnapshot = drawing
+
         DispatchQueue.global(qos: .userInitiated).async {
-            let thumbnail = drawing.createThumbnail()
-            let success = projectStore.save(project: project, drawing: drawing, thumbnail: thumbnail)
+            let thumbnail = drawingSnapshot.createThumbnail()
+            let success = projectStore.save(project: project, drawing: drawingSnapshot, thumbnail: thumbnail)
 
             DispatchQueue.main.async {
                 isSaving = false
@@ -494,7 +479,6 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> PKCanvasView {
         let canvas = PKCanvasView()
         canvas.drawing = drawing
-        context.coordinator.canvasView = canvas
         canvas.delegate = context.coordinator
         canvas.isOpaque = false
         canvas.backgroundColor = .systemBackground
@@ -516,31 +500,27 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(drawing: $drawing, isDirty: $isDirty, canUndo: $canUndo, canRedo: $canRedo, canvasView: nil)
+        Coordinator(drawing: $drawing, isDirty: $isDirty, canUndo: $canUndo, canRedo: $canRedo)
     }
 
-    class Coordinator: NSObject, PKCanvasViewDelegate {
+    final class Coordinator: NSObject, PKCanvasViewDelegate {
         @Binding var drawing: PKDrawing
         @Binding var isDirty: Bool
         @Binding var canUndo: Bool
         @Binding var canRedo: Bool
-        weak var canvasView: PKCanvasView?
 
-        init(drawing: Binding<PKDrawing>, isDirty: Binding<Bool>, canUndo: Binding<Bool>, canRedo: Binding<Bool>, canvasView: PKCanvasView?) {
+        init(drawing: Binding<PKDrawing>, isDirty: Binding<Bool>, canUndo: Binding<Bool>, canRedo: Binding<Bool>) {
             self._drawing = drawing
             self._isDirty = isDirty
             self._canUndo = canUndo
             self._canRedo = canRedo
-            self.canvasView = canvasView
         }
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
             drawing = canvasView.drawing
             isDirty = true
-            DispatchQueue.main.async {
-                self.canUndo = canvasView.undoManager?.canUndo ?? false
-                self.canRedo = canvasView.undoManager?.canRedo ?? false
-            }
+            canUndo = canvasView.undoManager?.canUndo ?? false
+            canRedo = canvasView.undoManager?.canRedo ?? false
         }
     }
 }

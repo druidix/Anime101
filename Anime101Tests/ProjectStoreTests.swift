@@ -5,26 +5,23 @@ import UIKit
 
 final class ProjectStoreTests: XCTestCase {
     var projectStore: ProjectStore!
-    var testProjectsURL: URL!
+    var testBaseURL: URL!
 
     override func setUp() {
         super.setUp()
-        projectStore = ProjectStore()
 
-        // Set up temporary directory for test projects
         let tempDir = FileManager.default.temporaryDirectory
-        testProjectsURL = tempDir.appendingPathComponent("TestProjects_\(UUID().uuidString)")
+        testBaseURL = tempDir.appendingPathComponent("Anime101Tests_\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: testBaseURL, withIntermediateDirectories: true)
 
-        // Override the projects directory (we'll handle this by using the default for now)
-        // In a real scenario, you'd inject the base path into ProjectStore
+        projectStore = ProjectStore(baseDirectory: testBaseURL)
     }
 
     override func tearDown() {
         super.tearDown()
 
-        // Clean up test projects directory
-        if let testURL = testProjectsURL {
-            try? FileManager.default.removeItem(at: testURL)
+        if let testBaseURL {
+            try? FileManager.default.removeItem(at: testBaseURL)
         }
     }
 
@@ -43,8 +40,7 @@ final class ProjectStoreTests: XCTestCase {
     func testCreateProjectWritesFilesToDisk() {
         let project = projectStore.createProject(name: "Disk Test")
 
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let projectURL = documentsURL.appendingPathComponent("Projects").appendingPathComponent(project.id.uuidString)
+        let projectURL = testBaseURL.appendingPathComponent("Projects").appendingPathComponent(project.id.uuidString)
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: projectURL.path), "Project directory should exist")
         XCTAssertTrue(FileManager.default.fileExists(atPath: projectURL.appendingPathComponent("metadata.json").path), "Metadata file should exist")
@@ -52,29 +48,16 @@ final class ProjectStoreTests: XCTestCase {
     }
 
     func testListProjects() {
-        // Clean up any existing projects first
-        let existingProjects = projectStore.listProjects()
-        for project in existingProjects {
-            projectStore.delete(projectId: project.id)
-        }
-
         let project1 = projectStore.createProject(name: "Project 1")
         let project2 = projectStore.createProject(name: "Project 2")
         let project3 = projectStore.createProject(name: "Project 3")
 
         let listedProjects = projectStore.listProjects()
 
-        XCTAssertGreaterThanOrEqual(listedProjects.count, 3, "Should have at least 3 projects")
+        XCTAssertEqual(listedProjects.count, 3)
 
-        let projectNames = listedProjects.map { $0.name }
-        XCTAssertTrue(projectNames.contains("Project 1"))
-        XCTAssertTrue(projectNames.contains("Project 2"))
-        XCTAssertTrue(projectNames.contains("Project 3"))
-
-        // Clean up
-        projectStore.delete(projectId: project1.id)
-        projectStore.delete(projectId: project2.id)
-        projectStore.delete(projectId: project3.id)
+        let projectNames = Set(listedProjects.map { $0.name })
+        XCTAssertEqual(projectNames, Set([project1.name, project2.name, project3.name]))
     }
 
     func testLoadProject() {
@@ -88,31 +71,19 @@ final class ProjectStoreTests: XCTestCase {
         XCTAssertEqual(loadedProject.id, originalProject.id)
         XCTAssertEqual(loadedProject.name, originalProject.name)
         XCTAssertEqual(loadedProject.createdAt, originalProject.createdAt)
-
-        // Clean up
-        projectStore.delete(projectId: originalProject.id)
     }
 
     func testSaveProjectWithDrawing() {
         let project = projectStore.createProject(name: "Drawing Test")
 
-        // Create a test drawing
         let testDrawing = PKDrawing()
-
-        // Create a test thumbnail
         let testImage = UIImage(color: .blue, size: CGSize(width: 100, height: 100)) ?? UIImage()
 
         let success = projectStore.save(project: project, drawing: testDrawing, thumbnail: testImage)
         XCTAssertTrue(success, "Save should succeed")
 
-        // Verify files exist
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let projectURL = documentsURL.appendingPathComponent("Projects").appendingPathComponent(project.id.uuidString)
-
+        let projectURL = testBaseURL.appendingPathComponent("Projects").appendingPathComponent(project.id.uuidString)
         XCTAssertTrue(FileManager.default.fileExists(atPath: projectURL.appendingPathComponent("thumbnail.png").path), "Thumbnail should exist")
-
-        // Clean up
-        projectStore.delete(projectId: project.id)
     }
 
     func testRenameProject() {
@@ -128,9 +99,6 @@ final class ProjectStoreTests: XCTestCase {
         }
 
         XCTAssertEqual(renamedProject.name, newName)
-
-        // Clean up
-        projectStore.delete(projectId: project.id)
     }
 
     func testDeleteProject() {
@@ -140,9 +108,7 @@ final class ProjectStoreTests: XCTestCase {
         let success = projectStore.delete(projectId: projectId)
         XCTAssertTrue(success, "Delete should succeed")
 
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let projectURL = documentsURL.appendingPathComponent("Projects").appendingPathComponent(projectId.uuidString)
-
+        let projectURL = testBaseURL.appendingPathComponent("Projects").appendingPathComponent(projectId.uuidString)
         XCTAssertFalse(FileManager.default.fileExists(atPath: projectURL.path), "Project directory should be deleted")
     }
 
@@ -157,9 +123,6 @@ final class ProjectStoreTests: XCTestCase {
         XCTAssertEqual(loadedProject.id, originalProject.id)
         XCTAssertEqual(loadedProject.name, originalProject.name)
         XCTAssertEqual(loadedProject.createdAt, originalProject.createdAt)
-
-        // Clean up
-        projectStore.delete(projectId: originalProject.id)
     }
 
     func testProjectDrawingRoundTrip() {
@@ -175,9 +138,6 @@ final class ProjectStoreTests: XCTestCase {
         let recreatedDrawing = try? PKDrawing(data: originalData)
 
         XCTAssertNotNil(recreatedDrawing, "Should be able to recreate drawing from data")
-
-        // Clean up
-        projectStore.delete(projectId: project.id)
     }
 }
 

@@ -3,8 +3,14 @@ import PencilKit
 import UIKit
 import SwiftUI
 
-class ProjectStore: ObservableObject {
+final class ProjectStore: ObservableObject {
     private let fileManager = FileManager.default
+    private let projectsDirectoryURL: URL
+
+    init(baseDirectory: URL? = nil) {
+        let base = baseDirectory ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        projectsDirectoryURL = base.appendingPathComponent("Projects")
+    }
 
     // MARK: - Public Methods
 
@@ -139,31 +145,27 @@ class ProjectStore: ObservableObject {
     // MARK: - Private Helpers
 
     private func ensureProjectsDirectoryExists() -> URL {
-        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let projectsURL = documentsURL.appendingPathComponent("Projects")
-
-        if !fileManager.fileExists(atPath: projectsURL.path) {
-            try? fileManager.createDirectory(at: projectsURL, withIntermediateDirectories: true)
+        if !fileManager.fileExists(atPath: projectsDirectoryURL.path) {
+            try? fileManager.createDirectory(at: projectsDirectoryURL, withIntermediateDirectories: true)
         }
 
-        return projectsURL
+        return projectsDirectoryURL
     }
 
     private func projectDirectoryURL(id: UUID) -> URL {
-        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return documentsURL.appendingPathComponent("Projects").appendingPathComponent(id.uuidString)
+        projectsDirectoryURL.appendingPathComponent(id.uuidString)
     }
 
     private func drawingDataURL(id: UUID) -> URL {
-        return projectDirectoryURL(id: id).appendingPathComponent("drawing.data")
+        projectDirectoryURL(id: id).appendingPathComponent("drawing.data")
     }
 
     private func metadataURL(id: UUID) -> URL {
-        return projectDirectoryURL(id: id).appendingPathComponent("metadata.json")
+        projectDirectoryURL(id: id).appendingPathComponent("metadata.json")
     }
 
     private func thumbnailURL(id: UUID) -> URL {
-        return projectDirectoryURL(id: id).appendingPathComponent("thumbnail.png")
+        projectDirectoryURL(id: id).appendingPathComponent("thumbnail.png")
     }
 
     private func saveProjectMetadata(_ project: Project, to projectURL: URL) throws {
