@@ -70,7 +70,13 @@ final class ProjectStoreTests: XCTestCase {
 
         XCTAssertEqual(loadedProject.id, originalProject.id)
         XCTAssertEqual(loadedProject.name, originalProject.name)
-        XCTAssertEqual(loadedProject.createdAt, originalProject.createdAt)
+        // Metadata is persisted as ISO 8601 without fractional seconds, so
+        // round-tripped dates only preserve whole-second precision.
+        XCTAssertEqual(
+            loadedProject.createdAt.timeIntervalSince1970,
+            originalProject.createdAt.timeIntervalSince1970,
+            accuracy: 1.0
+        )
     }
 
     func testSaveProjectWithDrawing() {
@@ -122,7 +128,11 @@ final class ProjectStoreTests: XCTestCase {
 
         XCTAssertEqual(loadedProject.id, originalProject.id)
         XCTAssertEqual(loadedProject.name, originalProject.name)
-        XCTAssertEqual(loadedProject.createdAt, originalProject.createdAt)
+        XCTAssertEqual(
+            loadedProject.createdAt.timeIntervalSince1970,
+            originalProject.createdAt.timeIntervalSince1970,
+            accuracy: 1.0
+        )
     }
 
     func testProjectDrawingRoundTrip() {
@@ -138,6 +148,86 @@ final class ProjectStoreTests: XCTestCase {
         let recreatedDrawing = try? PKDrawing(data: originalData)
 
         XCTAssertNotNil(recreatedDrawing, "Should be able to recreate drawing from data")
+    }
+
+    // MARK: - Edge Cases
+
+    func testLoadProjectReturnsNilForNonexistentId() {
+        XCTAssertNil(projectStore.loadProject(id: UUID()))
+    }
+
+    func testRenameReturnsFalseForNonexistentId() {
+        XCTAssertFalse(projectStore.rename(projectId: UUID(), newName: "Doesn't Matter"))
+    }
+
+    func testDeleteReturnsFalseForNonexistentId() {
+        XCTAssertFalse(projectStore.delete(projectId: UUID()))
+    }
+
+    func testListProjectsOnEmptyStoreReturnsEmptyArray() {
+        XCTAssertEqual(projectStore.listProjects(), [])
+    }
+
+    func testRenameUpdatesModifiedAt() {
+        let project = projectStore.createProject(name: "Before Rename")
+
+        XCTAssertTrue(projectStore.rename(projectId: project.id, newName: "After Rename"))
+
+        guard let (renamed, _) = projectStore.loadProject(id: project.id) else {
+            XCTFail("Should be able to load renamed project")
+            return
+        }
+
+        // Allow for the 1-second ISO 8601 truncation applied on disk when
+        // rename() and createProject() land within the same wall-clock second.
+        XCTAssertGreaterThanOrEqual(
+            renamed.modifiedAt.timeIntervalSince1970,
+            project.modifiedAt.timeIntervalSince1970 - 1.0
+        )
+    }
+
+    func testListProjectsSortedByModifiedAtDescending() {
+        let older = projectStore.createProject(name: "Older")
+        var olderModified = older
+        olderModified.modifiedAt = Date(timeIntervalSince1970: 1_000)
+        XCTAssertTrue(projectStore.save(project: olderModified, drawing: PKDrawing(), thumbnail: UIImage()))
+
+        let newer = projectStore.createProject(name: "Newer")
+        var newerModified = newer
+        newerModified.modifiedAt = Date(timeIntervalSince1970: 2_000)
+        XCTAssertTrue(projectStore.save(project: newerModified, drawing: PKDrawing(), thumbnail: UIImage()))
+
+        let listed = projectStore.listProjects()
+
+        XCTAssertEqual(listed.first?.name, "Newer")
+        XCTAssertEqual(listed.last?.name, "Older")
+    }
+
+    func testListProjectsSkipsCorruptMetadata() {
+        let projectsURL = testBaseURL.appendingPathComponent("Projects")
+        let corruptProjectURL = projectsURL.appendingPathComponent(UUID().uuidString)
+        try? FileManager.default.createDirectory(at: corruptProjectURL, withIntermediateDirectories: true)
+        try? "not valid json".data(using: .utf8)?.write(to: corruptProjectURL.appendingPathComponent("metadata.json"))
+
+        let validProject = projectStore.createProject(name: "Valid Project")
+
+        let listed = projectStore.listProjects()
+
+        XCTAssertEqual(listed.count, 1)
+        XCTAssertEqual(listed.first?.id, validProject.id)
+    }
+
+    func testListProjectsSkipsNonDirectoryEntries() {
+        let projectsURL = testBaseURL.appendingPathComponent("Projects")
+        try? FileManager.default.createDirectory(at: projectsURL, withIntermediateDirectories: true)
+        try? Data().write(to: projectsURL.appendingPathComponent("stray-file.txt"))
+
+        let validProject = projectStore.createProject(name: "Valid Project")
+
+        let listed = projectStore.listProjects()
+
+        XCTAssertEqual(listed.count, 1)
+        XCTAssertEqual(listed.first?.id, validProject.id)
     }
 }
 

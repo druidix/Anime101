@@ -15,6 +15,11 @@
 		B1FE91902F7DDAF500F72AD5 /* ProjectStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FE91902F7DDAF400F72AD5 /* ProjectStoreTests.swift */; };
 		B1FE91912F7DDAF500F72AD5 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FE918E2F7DDAF400F72AD5 /* Project.swift */; };
 		B1FE91922F7DDAF500F72AD5 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FE918F2F7DDAF400F72AD5 /* ProjectStore.swift */; };
+		622BB716C8974669A90B710F /* DrawingToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAE070D6D774ADCA394A0B8 /* DrawingToolTests.swift */; };
+		9FFB383FA6B74C768738C8DC /* ProjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11FFED26A3C8434086C1F6DF /* ProjectTests.swift */; };
+		95B64AA1AA294006AF29564C /* PKDrawingThumbnailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC351CFF2AD403F99E418E3 /* PKDrawingThumbnailTests.swift */; };
+		A5E77FEB59A64EC58C2EED70 /* CanvasViewHolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CFF75FB26544D4D939DD273 /* CanvasViewHolderTests.swift */; };
+		3D9A1C2E4B8F4A1D9E6C7F52 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FE917D2F7DDAF300F72AD5 /* ContentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +32,10 @@
 		B1FE918E2F7DDAF400F72AD5 /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
 		B1FE918F2F7DDAF400F72AD5 /* ProjectStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectStore.swift; sourceTree = "<group>"; };
 		B1FE91902F7DDAF400F72AD5 /* ProjectStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectStoreTests.swift; sourceTree = "<group>"; };
+		1BAE070D6D774ADCA394A0B8 /* DrawingToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingToolTests.swift; sourceTree = "<group>"; };
+		11FFED26A3C8434086C1F6DF /* ProjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTests.swift; sourceTree = "<group>"; };
+		EEC351CFF2AD403F99E418E3 /* PKDrawingThumbnailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKDrawingThumbnailTests.swift; sourceTree = "<group>"; };
+		0CFF75FB26544D4D939DD273 /* CanvasViewHolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewHolderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +99,10 @@
 			isa = PBXGroup;
 			children = (
 				B1FE91902F7DDAF400F72AD5 /* ProjectStoreTests.swift */,
+				1BAE070D6D774ADCA394A0B8 /* DrawingToolTests.swift */,
+				11FFED26A3C8434086C1F6DF /* ProjectTests.swift */,
+				EEC351CFF2AD403F99E418E3 /* PKDrawingThumbnailTests.swift */,
+				0CFF75FB26544D4D939DD273 /* CanvasViewHolderTests.swift */,
 			);
 			path = Anime101Tests;
 			sourceTree = "<group>";
@@ -212,6 +225,11 @@
 				B1FE91902F7DDAF500F72AD5 /* ProjectStoreTests.swift in Sources */,
 				B1FE91912F7DDAF500F72AD5 /* Project.swift in Sources */,
 				B1FE91922F7DDAF500F72AD5 /* ProjectStore.swift in Sources */,
+				622BB716C8974669A90B710F /* DrawingToolTests.swift in Sources */,
+				9FFB383FA6B74C768738C8DC /* ProjectTests.swift in Sources */,
+				95B64AA1AA294006AF29564C /* PKDrawingThumbnailTests.swift in Sources */,
+				A5E77FEB59A64EC58C2EED70 /* CanvasViewHolderTests.swift in Sources */,
+				3D9A1C2E4B8F4A1D9E6C7F52 /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
