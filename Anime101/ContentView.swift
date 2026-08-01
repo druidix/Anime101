@@ -329,8 +329,8 @@ struct InteractivePopGestureDisabler: UIViewControllerRepresentable {
 }
 
 struct CanvasView: View {
-    let project: Project
     @EnvironmentObject var projectStore: ProjectStore
+    @State private var currentProject: Project
     @State private var drawing: PKDrawing = PKDrawing()
     @State private var isDirty = false
     @State private var isSaving = false
@@ -338,17 +338,24 @@ struct CanvasView: View {
     @State private var canUndo = false
     @State private var canRedo = false
     @State private var canvasViewHolder = CanvasViewHolder()
+    @State private var autosaveController = AutosaveController()
+    @State private var showSaveAsAlert = false
+    @State private var saveAsName = ""
 
     @Environment(\.dismiss) var dismiss
+
+    init(project: Project) {
+        _currentProject = State(initialValue: project)
+    }
 
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(project.name)
+                        Text(currentProject.name)
                             .font(.headline)
-                        Text("Modified: \(project.modifiedAt.formatted(date: .abbreviated, time: .shortened))")
+                        Text("Modified: \(currentProject.modifiedAt.formatted(date: .abbreviated, time: .shortened))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -374,7 +381,7 @@ struct CanvasView: View {
                         }
                         .disabled(!canRedo)
 
-                        Button(action: saveDrawing) {
+                        Button(action: manualSave) {
                             HStack(spacing: 4) {
                                 Image(systemName: "checkmark.circle.fill")
                                 Text("Save")
@@ -382,6 +389,18 @@ struct CanvasView: View {
                             .font(.caption)
                         }
                         .disabled(!isDirty || isSaving)
+
+                        Button(action: {
+                            saveAsName = currentProject.name
+                            showSaveAsAlert = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "square.and.arrow.down")
+                                Text("Save As")
+                            }
+                            .font(.caption)
+                        }
+                        .disabled(isSaving)
                     }
                 }
                 .padding()
@@ -420,33 +439,81 @@ struct CanvasView: View {
         .background(InteractivePopGestureDisabler())
         .onAppear {
             loadDrawing()
+            autosaveController.onActivitySave = { performAutosave(force: false) }
+            autosaveController.onBackstopSave = { performAutosave(force: true) }
+            autosaveController.start()
         }
         .onDisappear {
+            autosaveController.stop()
             if isDirty {
                 saveDrawing()
             }
         }
+        .alert("Save As", isPresented: $showSaveAsAlert) {
+            TextField("Project Name", text: $saveAsName)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                saveAs(name: saveAsName)
+            }
+        } message: {
+            Text("Enter a name to save this project as.")
+        }
     }
 
     private func loadDrawing() {
-        if let (_, loadedDrawing) = projectStore.loadProject(id: project.id) {
+        if let (_, loadedDrawing) = projectStore.loadProject(id: currentProject.id) {
             drawing = loadedDrawing
         }
     }
 
-    private func saveDrawing() {
-        isSaving = true
+    /// Autosave entry point. The 10s activity timer only saves when dirty; the 60s
+    /// backstop timer saves unconditionally to cover the idle case.
+    private func performAutosave(force: Bool) {
+        guard force || isDirty else { return }
+        saveDrawing(showsSpinner: false)
+    }
 
+    private func manualSave() {
+        saveDrawing()
+        autosaveController.resetTimers()
+    }
+
+    /// Creates a new, independent project with the given name and switches the canvas to it,
+    /// leaving the original project untouched on disk.
+    private func saveAs(name: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+
+        currentProject = Project(
+            id: UUID(),
+            name: trimmedName,
+            createdAt: Date(),
+            modifiedAt: Date()
+        )
+        saveDrawing()
+        autosaveController.resetTimers()
+    }
+
+    private func saveDrawing(showsSpinner: Bool = true) {
+        if showsSpinner {
+            isSaving = true
+        }
+
+        var projectSnapshot = currentProject
+        projectSnapshot.modifiedAt = Date()
         let drawingSnapshot = drawing
 
         DispatchQueue.global(qos: .userInitiated).async {
             let thumbnail = drawingSnapshot.createThumbnail()
-            let success = projectStore.save(project: project, drawing: drawingSnapshot, thumbnail: thumbnail)
+            let success = projectStore.save(project: projectSnapshot, drawing: drawingSnapshot, thumbnail: thumbnail)
 
             DispatchQueue.main.async {
-                isSaving = false
+                if showsSpinner {
+                    isSaving = false
+                }
                 if success {
                     isDirty = false
+                    currentProject = projectSnapshot
                 }
             }
         }

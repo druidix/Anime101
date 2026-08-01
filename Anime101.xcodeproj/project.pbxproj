@@ -20,6 +20,9 @@
 		95B64AA1AA294006AF29564C /* PKDrawingThumbnailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC351CFF2AD403F99E418E3 /* PKDrawingThumbnailTests.swift */; };
 		A5E77FEB59A64EC58C2EED70 /* CanvasViewHolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CFF75FB26544D4D939DD273 /* CanvasViewHolderTests.swift */; };
 		3D9A1C2E4B8F4A1D9E6C7F52 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FE917D2F7DDAF300F72AD5 /* ContentView.swift */; };
+		13191F6D4ABC4D17AD086615 /* AutosaveController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41834E9E6ADA4CDEA9E908E3 /* AutosaveController.swift */; };
+		29C05D381F384DEFB766A658 /* AutosaveController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41834E9E6ADA4CDEA9E908E3 /* AutosaveController.swift */; };
+		25176BCC47434E4CB73AA03D /* AutosaveControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3FDEAD067B14D08B3630B5E /* AutosaveControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +39,8 @@
 		11FFED26A3C8434086C1F6DF /* ProjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTests.swift; sourceTree = "<group>"; };
 		EEC351CFF2AD403F99E418E3 /* PKDrawingThumbnailTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKDrawingThumbnailTests.swift; sourceTree = "<group>"; };
 		0CFF75FB26544D4D939DD273 /* CanvasViewHolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewHolderTests.swift; sourceTree = "<group>"; };
+		41834E9E6ADA4CDEA9E908E3 /* AutosaveController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutosaveController.swift; sourceTree = "<group>"; };
+		F3FDEAD067B14D08B3630B5E /* AutosaveControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutosaveControllerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +84,7 @@
 			children = (
 				B1FE917A2F7DDAF300F72AD5 /* Anime101App.swift */,
 				B1FE917D2F7DDAF300F72AD5 /* ContentView.swift */,
+				41834E9E6ADA4CDEA9E908E3 /* AutosaveController.swift */,
 				B1FE91962F7DDAF500F72AD5 /* Models */,
 				B1FE91972F7DDAF500F72AD5 /* Storage */,
 				B1FE917F2F7DDAF500F72AD5 /* Assets.xcassets */,
@@ -103,6 +109,7 @@
 				11FFED26A3C8434086C1F6DF /* ProjectTests.swift */,
 				EEC351CFF2AD403F99E418E3 /* PKDrawingThumbnailTests.swift */,
 				0CFF75FB26544D4D939DD273 /* CanvasViewHolderTests.swift */,
+				F3FDEAD067B14D08B3630B5E /* AutosaveControllerTests.swift */,
 			);
 			path = Anime101Tests;
 			sourceTree = "<group>";
@@ -215,6 +222,7 @@
 				B1FE917B2F7DDAF300F72AD5 /* Anime101App.swift in Sources */,
 				B1FE918E2F7DDAF500F72AD5 /* Project.swift in Sources */,
 				B1FE918F2F7DDAF500F72AD5 /* ProjectStore.swift in Sources */,
+				13191F6D4ABC4D17AD086615 /* AutosaveController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -230,6 +238,8 @@
 				95B64AA1AA294006AF29564C /* PKDrawingThumbnailTests.swift in Sources */,
 				A5E77FEB59A64EC58C2EED70 /* CanvasViewHolderTests.swift in Sources */,
 				3D9A1C2E4B8F4A1D9E6C7F52 /* ContentView.swift in Sources */,
+				29C05D381F384DEFB766A658 /* AutosaveController.swift in Sources */,
+				25176BCC47434E4CB73AA03D /* AutosaveControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

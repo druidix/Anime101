@@ -217,6 +217,26 @@ final class ProjectStoreTests: XCTestCase {
         XCTAssertEqual(listed.first?.id, validProject.id)
     }
 
+    func testSavingDoesNotClearCanvasUndoHistory() {
+        // The undo manager is only meaningfully wired up once the canvas is part of a
+        // window's responder chain (see commit 0135b7f), so attach it to one here.
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let canvas = PKCanvasView(frame: window.bounds)
+        window.addSubview(canvas)
+        window.makeKeyAndVisible()
+
+        canvas.undoManager?.levelsOfUndo = 50
+        canvas.undoManager?.beginUndoGrouping()
+        canvas.undoManager?.registerUndo(withTarget: canvas) { _ in }
+        canvas.undoManager?.endUndoGrouping()
+        XCTAssertTrue(canvas.undoManager?.canUndo ?? false)
+
+        let project = projectStore.createProject(name: "Undo Safety")
+        XCTAssertTrue(projectStore.save(project: project, drawing: canvas.drawing, thumbnail: UIImage()))
+
+        XCTAssertTrue(canvas.undoManager?.canUndo ?? false, "Saving should not clear the canvas undo history")
+    }
+
     func testListProjectsSkipsNonDirectoryEntries() {
         let projectsURL = testBaseURL.appendingPathComponent("Projects")
         try? FileManager.default.createDirectory(at: projectsURL, withIntermediateDirectories: true)
