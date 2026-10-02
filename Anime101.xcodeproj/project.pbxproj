@@ -23,6 +23,16 @@
 		13191F6D4ABC4D17AD086615 /* AutosaveController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41834E9E6ADA4CDEA9E908E3 /* AutosaveController.swift */; };
 		29C05D381F384DEFB766A658 /* AutosaveController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41834E9E6ADA4CDEA9E908E3 /* AutosaveController.swift */; };
 		25176BCC47434E4CB73AA03D /* AutosaveControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3FDEAD067B14D08B3630B5E /* AutosaveControllerTests.swift */; };
+		F03BFC6D488E478A9BD74902 /* DrawingStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41ECC54B5CB84AAEA1111966 /* DrawingStyle.swift */; };
+		18E03EF5278A4BA386ECD766 /* DrawingStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41ECC54B5CB84AAEA1111966 /* DrawingStyle.swift */; };
+		40E32392706644939A87F88E /* FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52439B5234D4F84855F0658 /* FloatingPanel.swift */; };
+		03A72ABFD0664D79BB1103AB /* FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52439B5234D4F84855F0658 /* FloatingPanel.swift */; };
+		D99BC1C6FE6C41E69A865A07 /* ColorPickerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F840E4CD02142A38E1E5233 /* ColorPickerPanel.swift */; };
+		3F1732E113FA41E7B77848E8 /* ColorPickerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F840E4CD02142A38E1E5233 /* ColorPickerPanel.swift */; };
+		8DF643F3A6184045BE78CAF9 /* WidthPickerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BBE94931234BA59416F8B1 /* WidthPickerPanel.swift */; };
+		323CD14595BC4DEF99ACF922 /* WidthPickerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BBE94931234BA59416F8B1 /* WidthPickerPanel.swift */; };
+		4DCE37E4313045FE9EB855D8 /* DrawingStyleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D37F17C44C94D6B9768B89D /* DrawingStyleTests.swift */; };
+		D6E679D17D8A4BAFB3B07877 /* FloatingPanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1BF01194804435AA7115A7 /* FloatingPanelLayoutTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +51,12 @@
 		0CFF75FB26544D4D939DD273 /* CanvasViewHolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewHolderTests.swift; sourceTree = "<group>"; };
 		41834E9E6ADA4CDEA9E908E3 /* AutosaveController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutosaveController.swift; sourceTree = "<group>"; };
 		F3FDEAD067B14D08B3630B5E /* AutosaveControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutosaveControllerTests.swift; sourceTree = "<group>"; };
+		41ECC54B5CB84AAEA1111966 /* DrawingStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingStyle.swift; sourceTree = "<group>"; };
+		D52439B5234D4F84855F0658 /* FloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPanel.swift; sourceTree = "<group>"; };
+		6F840E4CD02142A38E1E5233 /* ColorPickerPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerPanel.swift; sourceTree = "<group>"; };
+		A8BBE94931234BA59416F8B1 /* WidthPickerPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidthPickerPanel.swift; sourceTree = "<group>"; };
+		6D37F17C44C94D6B9768B89D /* DrawingStyleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingStyleTests.swift; sourceTree = "<group>"; };
+		7F1BF01194804435AA7115A7 /* FloatingPanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPanelLayoutTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +101,9 @@
 				B1FE917A2F7DDAF300F72AD5 /* Anime101App.swift */,
 				B1FE917D2F7DDAF300F72AD5 /* ContentView.swift */,
 				41834E9E6ADA4CDEA9E908E3 /* AutosaveController.swift */,
+				D52439B5234D4F84855F0658 /* FloatingPanel.swift */,
+				6F840E4CD02142A38E1E5233 /* ColorPickerPanel.swift */,
+				A8BBE94931234BA59416F8B1 /* WidthPickerPanel.swift */,
 				B1FE91962F7DDAF500F72AD5 /* Models */,
 				B1FE91972F7DDAF500F72AD5 /* Storage */,
 				B1FE917F2F7DDAF500F72AD5 /* Assets.xcassets */,
@@ -110,6 +129,8 @@
 				EEC351CFF2AD403F99E418E3 /* PKDrawingThumbnailTests.swift */,
 				0CFF75FB26544D4D939DD273 /* CanvasViewHolderTests.swift */,
 				F3FDEAD067B14D08B3630B5E /* AutosaveControllerTests.swift */,
+				6D37F17C44C94D6B9768B89D /* DrawingStyleTests.swift */,
+				7F1BF01194804435AA7115A7 /* FloatingPanelLayoutTests.swift */,
 			);
 			path = Anime101Tests;
 			sourceTree = "<group>";
@@ -118,6 +139,7 @@
 			isa = PBXGroup;
 			children = (
 				B1FE918E2F7DDAF400F72AD5 /* Project.swift */,
+				41ECC54B5CB84AAEA1111966 /* DrawingStyle.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -223,6 +245,10 @@
 				B1FE918E2F7DDAF500F72AD5 /* Project.swift in Sources */,
 				B1FE918F2F7DDAF500F72AD5 /* ProjectStore.swift in Sources */,
 				13191F6D4ABC4D17AD086615 /* AutosaveController.swift in Sources */,
+				F03BFC6D488E478A9BD74902 /* DrawingStyle.swift in Sources */,
+				40E32392706644939A87F88E /* FloatingPanel.swift in Sources */,
+				D99BC1C6FE6C41E69A865A07 /* ColorPickerPanel.swift in Sources */,
+				8DF643F3A6184045BE78CAF9 /* WidthPickerPanel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,6 +266,12 @@
 				3D9A1C2E4B8F4A1D9E6C7F52 /* ContentView.swift in Sources */,
 				29C05D381F384DEFB766A658 /* AutosaveController.swift in Sources */,
 				25176BCC47434E4CB73AA03D /* AutosaveControllerTests.swift in Sources */,
+				18E03EF5278A4BA386ECD766 /* DrawingStyle.swift in Sources */,
+				03A72ABFD0664D79BB1103AB /* FloatingPanel.swift in Sources */,
+				3F1732E113FA41E7B77848E8 /* ColorPickerPanel.swift in Sources */,
+				323CD14595BC4DEF99ACF922 /* WidthPickerPanel.swift in Sources */,
+				4DCE37E4313045FE9EB855D8 /* DrawingStyleTests.swift in Sources */,
+				D6E679D17D8A4BAFB3B07877 /* FloatingPanelLayoutTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

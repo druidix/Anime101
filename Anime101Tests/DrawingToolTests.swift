@@ -24,10 +24,10 @@ final class DrawingToolTests: XCTestCase {
     }
 
     func testPencilPKTool() {
-        XCTAssertTrue(DrawingTool.pencil.pkTool is PKInkingTool)
+        XCTAssertTrue(DrawingTool.pencil.pkTool() is PKInkingTool)
     }
 
     func testEraserPKTool() {
-        XCTAssertTrue(DrawingTool.eraser.pkTool is PKEraserTool)
+        XCTAssertTrue(DrawingTool.eraser.pkTool() is PKEraserTool)
     }
 }

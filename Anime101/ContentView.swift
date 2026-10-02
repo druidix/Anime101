@@ -44,14 +44,26 @@ enum DrawingTool: CaseIterable {
         }
     }
 
-    var pkTool: PKTool {
+    func pkTool(style: ToolStyle = ToolStyle()) -> PKTool {
         switch self {
         case .pencil:
-            return PKInkingTool(.pen)
+            return PKInkingTool(.pen, color: style.color.uiColor, width: CGFloat(style.pencilWidth))
         case .eraser:
-            return PKEraserTool(.bitmap)
+            return PKEraserTool(.bitmap, width: CGFloat(style.eraserWidth))
         }
     }
+}
+
+/// Color and widths applied to the drawing tools. Color and pencil width affect only the pencil.
+struct ToolStyle: Equatable {
+    var color: RGBAColor = .black
+    var pencilWidth: Double = StrokeWidths.pencilDefault
+    var eraserWidth: Double = StrokeWidths.eraserDefault
+}
+
+enum StylePanel {
+    case color
+    case width
 }
 
 struct MainMenuView: View {
@@ -341,6 +353,12 @@ struct CanvasView: View {
     @State private var autosaveController = AutosaveController()
     @State private var showSaveAsAlert = false
     @State private var saveAsName = ""
+    @State private var activeColor: RGBAColor = .black
+    @State private var showColorPanel = false
+    @State private var showWidthPanel = false
+    @State private var colorPanelOffset = FloatingPanel<EmptyView>.restingOffset
+    @State private var widthPanelOffset = FloatingPanel<EmptyView>.restingOffset
+    @State private var frontPanel: StylePanel = .color
 
     @Environment(\.dismiss) var dismiss
 
@@ -408,25 +426,8 @@ struct CanvasView: View {
                 .border(Color(.systemGray4), width: 1)
 
                 VStack(spacing: 0) {
-                    Picker("Tool", selection: $currentTool) {
-                        ForEach(DrawingTool.allCases, id: \.self) { tool in
-                            Label(tool.label, systemImage: tool.systemImage)
-                                .tag(tool)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding()
-                    .background(Color(.systemGray6))
-
-                    PKCanvasViewRepresentable(
-                        drawing: $drawing,
-                        isDirty: $isDirty,
-                        currentTool: $currentTool,
-                        canUndo: $canUndo,
-                        canRedo: $canRedo,
-                        canvasViewHolder: canvasViewHolder
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    toolRow
+                    canvasArea
                 }
             }
 
@@ -460,10 +461,162 @@ struct CanvasView: View {
         }
     }
 
+    // MARK: - Tool row and panels
+
+    private var toolStyle: ToolStyle {
+        ToolStyle(
+            color: activeColor,
+            pencilWidth: currentProject.effectivePencilWidth,
+            eraserWidth: currentProject.effectiveEraserWidth
+        )
+    }
+
+    private var activeToolWidth: Double {
+        switch currentTool {
+        case .pencil: return currentProject.effectivePencilWidth
+        case .eraser: return currentProject.effectiveEraserWidth
+        }
+    }
+
+    private var toolRow: some View {
+        HStack(spacing: 16) {
+            Picker("Tool", selection: $currentTool) {
+                ForEach(DrawingTool.allCases, id: \.self) { tool in
+                    Label(tool.label, systemImage: tool.systemImage)
+                        .tag(tool)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 260)
+
+            Spacer()
+
+            Button(action: { openPanel(.color) }) {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(activeColor.swiftUIColor)
+                        .overlay(Circle().strokeBorder(Color(.separator)))
+                        .frame(width: 22, height: 22)
+                    Text("Color")
+                }
+            }
+            .accessibilityLabel("Color, current \(activeColor.hexString)")
+
+            Button(action: { openPanel(.width) }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "lineweight")
+                    Text("Width \(Int(activeToolWidth)) pt")
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+    }
+
+    private var canvasArea: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .top) {
+                PKCanvasViewRepresentable(
+                    drawing: $drawing,
+                    isDirty: $isDirty,
+                    currentTool: $currentTool,
+                    canUndo: $canUndo,
+                    canRedo: $canRedo,
+                    canvasViewHolder: canvasViewHolder,
+                    toolStyle: toolStyle,
+                    onPencilStrokeEnded: recordActiveColor
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .zIndex(0)
+
+                if showColorPanel {
+                    FloatingPanel(
+                        title: "Color",
+                        containerSize: geometry.size,
+                        offset: $colorPanelOffset,
+                        onClose: { closePanel(.color) },
+                        onInteract: { frontPanel = .color }
+                    ) {
+                        ColorPickerPanelContent(color: $activeColor, recentColors: currentProject.recentColors)
+                    }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(frontPanel == .color ? 2 : 1)
+                }
+
+                if showWidthPanel {
+                    FloatingPanel(
+                        title: "\(currentTool.label) Width",
+                        containerSize: geometry.size,
+                        offset: $widthPanelOffset,
+                        onClose: { closePanel(.width) },
+                        onInteract: { frontPanel = .width }
+                    ) {
+                        WidthPickerPanelContent(
+                            tool: currentTool,
+                            selectedWidth: activeToolWidth,
+                            inkColor: activeColor.swiftUIColor,
+                            onSelect: selectWidth
+                        )
+                    }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(frontPanel == .width ? 2 : 1)
+                }
+            }
+            .clipped()
+        }
+    }
+
+    /// Opens a panel at its resting position. If it is already open, it just comes to the front;
+    /// panels close only via their X.
+    private func openPanel(_ panel: StylePanel) {
+        frontPanel = panel
+        switch panel {
+        case .color:
+            guard !showColorPanel else { return }
+            colorPanelOffset = FloatingPanel<EmptyView>.restingOffset
+            withAnimation(.easeOut(duration: 0.25)) { showColorPanel = true }
+        case .width:
+            guard !showWidthPanel else { return }
+            widthPanelOffset = FloatingPanel<EmptyView>.restingOffset
+            withAnimation(.easeOut(duration: 0.25)) { showWidthPanel = true }
+        }
+    }
+
+    private func closePanel(_ panel: StylePanel) {
+        withAnimation(.easeIn(duration: 0.2)) {
+            switch panel {
+            case .color: showColorPanel = false
+            case .width: showWidthPanel = false
+            }
+        }
+    }
+
+    /// Width changes apply to the active tool only and persist with the project.
+    private func selectWidth(_ width: Double) {
+        switch currentTool {
+        case .pencil: currentProject.pencilWidth = width
+        case .eraser: currentProject.eraserWidth = width
+        }
+        isDirty = true
+    }
+
+    /// Called when a pencil stroke ends. A color joins the history only once it has been drawn with,
+    /// and undo never removes it.
+    private func recordActiveColor() {
+        let updated = RecentColors.recording(activeColor, in: currentProject.recentColors)
+        guard updated != currentProject.recentColors else { return }
+        currentProject.recentColors = updated
+        isDirty = true
+    }
+
+    // MARK: - Persistence
+
     private func loadDrawing() {
-        if let (_, loadedDrawing) = projectStore.loadProject(id: currentProject.id) {
+        if let (loadedProject, loadedDrawing) = projectStore.loadProject(id: currentProject.id) {
+            currentProject = loadedProject
             drawing = loadedDrawing
         }
+        activeColor = currentProject.initialActiveColor
     }
 
     /// Autosave entry point. The 10s activity timer only saves when dirty; the 60s
@@ -484,12 +637,7 @@ struct CanvasView: View {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
 
-        currentProject = Project(
-            id: UUID(),
-            name: trimmedName,
-            createdAt: Date(),
-            modifiedAt: Date()
-        )
+        currentProject = currentProject.copy(named: trimmedName)
         saveDrawing()
         autosaveController.resetTimers()
     }
@@ -511,9 +659,12 @@ struct CanvasView: View {
                 if showsSpinner {
                     isSaving = false
                 }
-                if success {
+                guard success, currentProject.id == projectSnapshot.id else { return }
+                currentProject.modifiedAt = projectSnapshot.modifiedAt
+                // Only clear the dirty flag if nothing changed while the save was running;
+                // otherwise those changes would wait for the 60s backstop.
+                if drawing == drawingSnapshot && currentProject == projectSnapshot {
                     isDirty = false
-                    currentProject = projectSnapshot
                 }
             }
         }
@@ -542,16 +693,21 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
     @Binding var canUndo: Bool
     @Binding var canRedo: Bool
     let canvasViewHolder: CanvasViewHolder
+    let toolStyle: ToolStyle
+    let onPencilStrokeEnded: () -> Void
 
     func makeUIView(context: Context) -> PKCanvasView {
         let canvas = PKCanvasView()
         canvas.drawing = drawing
         canvas.delegate = context.coordinator
         canvas.isOpaque = false
-        canvas.backgroundColor = .systemBackground
+        // Locked to light mode: in dark mode PencilKit remaps black/white ink, so drawn colors
+        // would not match the picked color.
+        canvas.overrideUserInterfaceStyle = .light
+        canvas.backgroundColor = .white
         canvas.isUserInteractionEnabled = true
         canvas.drawingPolicy = .anyInput
-        canvas.tool = currentTool.pkTool
+        canvas.tool = currentTool.pkTool(style: toolStyle)
 
         canvas.undoManager?.levelsOfUndo = 50
         canvasViewHolder.canvasView = canvas
@@ -563,11 +719,14 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
         if uiView.drawing != drawing {
             uiView.drawing = drawing
         }
-        uiView.tool = currentTool.pkTool
+        uiView.tool = currentTool.pkTool(style: toolStyle)
+        context.coordinator.onPencilStrokeEnded = onPencilStrokeEnded
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(drawing: $drawing, isDirty: $isDirty, canUndo: $canUndo, canRedo: $canRedo)
+        let coordinator = Coordinator(drawing: $drawing, isDirty: $isDirty, canUndo: $canUndo, canRedo: $canRedo)
+        coordinator.onPencilStrokeEnded = onPencilStrokeEnded
+        return coordinator
     }
 
     final class Coordinator: NSObject, PKCanvasViewDelegate {
@@ -575,6 +734,7 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
         @Binding var isDirty: Bool
         @Binding var canUndo: Bool
         @Binding var canRedo: Bool
+        var onPencilStrokeEnded: () -> Void = {}
 
         init(drawing: Binding<PKDrawing>, isDirty: Binding<Bool>, canUndo: Binding<Bool>, canRedo: Binding<Bool>) {
             self._drawing = drawing
@@ -589,6 +749,13 @@ struct PKCanvasViewRepresentable: UIViewRepresentable {
             canUndo = canvasView.undoManager?.canUndo ?? false
             canRedo = canvasView.undoManager?.canRedo ?? false
         }
+
+        /// Fires when the user lifts after a stroke, not on undo/redo or programmatic changes.
+        func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
+            if canvasView.tool is PKInkingTool {
+                onPencilStrokeEnded()
+            }
+        }
     }
 }
 
@@ -597,8 +764,18 @@ extension PKDrawing {
         let format = UIGraphicsImageRendererFormat()
         format.opaque = false
 
-        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
-            UIColor.systemBackground.setFill()
+        // Render in light mode to match the canvas, regardless of the device appearance.
+        let lightTraits = UITraitCollection(userInterfaceStyle: .light)
+        var image = UIImage()
+        lightTraits.performAsCurrent {
+            image = renderThumbnail(size: size, format: format)
+        }
+        return image
+    }
+
+    private func renderThumbnail(size: CGSize, format: UIGraphicsImageRendererFormat) -> UIImage {
+        UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            UIColor.white.setFill()
             UIRectFill(CGRect(origin: .zero, size: size))
 
             guard !self.bounds.isEmpty else {
