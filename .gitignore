@@ -24,3 +24,6 @@ Podfile.lock
 # OS
 .DS_Store
 Thumbs.db
+
+# Local planning and study docs (not published)
+docs/
